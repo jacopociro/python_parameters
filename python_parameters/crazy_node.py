@@ -164,10 +164,10 @@ class CrazyNode(Node):
         self.split = 0.95
         self.Priority = np.zeros(len(self.wp) + 1)
         self.Perc = np.zeros(len(self.wp))
-        self.wp_gvalue = 5.0
-        self.drones_gvalue = 0.8
-        self.cs_gvalue = 8.0
-        self.obs_gvalue = 0.55
+        self.wp_gvalue = 0.5 # 5.0
+        self.drones_gvalue =  0.3 #0.8
+        self.cs_gvalue = 0.8 #8.0
+        self.obs_gvalue = 0.2 #0.55
         self.uptake = [False] * len(self.wp)
         self.vec_pos = []
         self.obstacle = []
@@ -198,14 +198,14 @@ class CrazyNode(Node):
         i = 0
         if self.Priority[len(self.Priority) - 1] < 0.7:
             for waypoint in self.wp:
-                #self.get_logger().info(f"{np.transpose(np.array([self.wp[waypoint][0], self.wp[waypoint][1], self.wp[waypoint][2], 1]))}")
-                waypoint_pos.append(np.array([self.wp[waypoint][0] - self.x_init, self.wp[waypoint][1] - self.y_init, self.wp[waypoint][2] - self.z_init, 1]))
-                if np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z])) < 0.2:
+                
+                waypoint_pos.append(np.array([self.wp[waypoint][0], self.wp[waypoint][1], self.wp[waypoint][2], 1]))
+                if np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z])) < 1.0:
                     self.uptake[i] = True
                 else:
                     self.uptake[i] = False
 
-                #self.get_logger().info(f"Waypoint {waypoint} position: {waypoint_pos[i]} - distance: {np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z]))} - waypoint data: {self.wp[waypoint]}")
+                self.get_logger().info(f"Waypoint {waypoint} position: {waypoint_pos[i]} - distance: {np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z]))} - waypoint data: {self.wp[waypoint]}")
                 self.Perc[i] = self.gaussian(np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z])), self.wp_gvalue, 1.0)
                 self.Priority[i] = self.biological_calculation(i, self.Perc[i], self.uptake[i])
                 for j in range(len(self.sensing)):
@@ -213,30 +213,30 @@ class CrazyNode(Node):
                     
                 i = i + 1
             
-        cs_pos.append(np.array([self.charging_stations[0] - self.x_init,self.charging_stations[1] - self.y_init, self.charging_stations[2] - self.z_init, 1]))
+        cs_pos.append(np.array([self.charging_stations[0],self.charging_stations[1], self.charging_stations[2], 1]))
         for j in range(len(self.sensing)):
             self.Perc1[j] += self.Priority[len(self.Priority) - 1]*self.gaussian(np.linalg.norm(cs_pos[0][:3] - np.array([self.sensing[j][:3]])), self.cs_gvalue, 1.0)
-            
+            #pass
         id = 0
         for name in self.drone_names:
             if name == self.drone_name:
                 continue
             else:
-                drones_pos.append(np.array([self.vec_pos[id][0] - self.x_init,self.vec_pos[id][1] - self.y_init,self.vec_pos[id][2] - self.z_init, 1]))
+                drones_pos.append(np.array([self.vec_pos[id][0],self.vec_pos[id][1],self.vec_pos[id][2], 1]))
                 for j in range(len(self.sensing)):
                     self.Perc1[j] += self.gaussian(np.linalg.norm(drones_pos[id][:3] - np.array([self.sensing[j][:3]])), self.drones_gvalue, -1.0)
-                    
+                    #pass
             id = id + 1
         #self.get_logger().info(f"obstacles list {self.obstacle}")
         for obstacle in self.obstacle:
             #self.get_logger().info(f"Obstacle: {obstacle}")
             for j in range(len(self.sensing)):
                 self.Perc1[j] += self.gaussian(np.linalg.norm(obstacle - np.array([self.sensing[j][:3]])), self.obs_gvalue, -1.0)
-            
+                #pass
         for i in range(len(self.sensing)):
-            #self.get_logger().info(f"Perc1 for sensing point {i}: {self.Perc1[i]}")
+            self.get_logger().info(f"Perc1 for sensing point {i}: {self.Perc1[i]}")
             vec[i] = (self.sensing[i] - np.array([self.x, self.y, self.z,1]))*self.Perc1[i]
-        #self.get_logger().info(f"vettori {vec}")
+        self.get_logger().info(f"vettori {vec}")
         sum_vec = np.sum(vec, axis=0)
         sum_vec[3] = 1.0
         mod = np.linalg.norm(sum_vec)
@@ -247,12 +247,19 @@ class CrazyNode(Node):
             sum_vec = sum_vec /mod *self.min_velocity
         # Logica per il movimento del drone
         # max speed 0.1 m/s 
-        
+        norm = np.linalg.norm(sum_vec)
+        sum_vec = sum_vec/norm
 
-        if self.z <= 0.1 and sum_vec[2] <= 0.0:
-            sum_vec[2] = 0.0
-        if self.z >= 1.0 and sum_vec[2] >= 0.0:
-            sum_vec[2] = 0.0
+
+        norm = np.linalg.norm(sum_vec)
+        self.get_logger().info(f"Norm of sum_vec: {norm}")
+        scale = 1.0
+        if norm != 0.0 and norm > self.max_velocity:
+            scale = self.max_velocity / norm
+        if norm != 0.0 and norm < self.min_velocity:
+            scale = self.min_velocity / norm
+
+        sum_vec = sum_vec*scale
         cmd_vel_msg = TwistStamped()
         cmd_vel_msg.header.stamp = self.get_clock().now().to_msg()
         cmd_vel_msg.header.frame_id = 'map'
@@ -294,6 +301,9 @@ class CrazyNode(Node):
         self.z += sum_vec[2]
 
         self.Memory += self.Memory_temp
+        for i in range(len(self.Memory - 1)):
+            if self.Memory[i] > 0.0005253:
+                self.Memory[i] = 0.0005253
         self.obstacle = []
         #Logger per i valori di Priority
         self.get_logger().info("=== Priority Values ===")
@@ -367,7 +377,7 @@ class CrazyNode(Node):
         # if np.any(np.all(self.obstacle == np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]))):
         #     pass
         # else:
-        self.obstacle.append([msg.pose.position.x - self.x_init, msg.pose.position.y - self.y_init, msg.pose.position.z - self.z_init])
+        self.obstacle.append([msg.pose.position.x , msg.pose.position.y, msg.pose.position.z])
 
 
     # UTILS
@@ -406,7 +416,7 @@ class CrazyNode(Node):
             -math.pi/4,
             -math.pi/4
         ]
-        radius = 0.05
+        radius = 0.1
         sensing_list = np.zeros((len(polar_angle), 4))
         for i in range(len(polar_angle)):
 
@@ -434,7 +444,7 @@ class CrazyNode(Node):
         if uptake:
             self.Memory_temp[counter] = I * self.split
             self.Mem_leader[counter] = I - I * self.split
-        # if counter == 0:
+        # if counter == 1:
         #     P = 1
         # else:
         #     P = 0
