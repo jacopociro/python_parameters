@@ -2,11 +2,16 @@
 
 /**:
   ros__parameters:
-    control_rate: 10.0
-    max_velocity: 0.1
-    min_velocity: 0.01
-    max_acceleration: 0.5
+    control_rate: 20.0 # hz
+    max_velocity: 0.1 # m/s
+    min_velocity: 0.001
+    max_z: 1.5
+    linearzbase: 0.01 #m/s
     obstacle_topic: "/obstacle/pose"
+    wp_gvalue: 0.5 # 5.0
+    cs_gvalue: 0.8 # 8.0
+    obs_gvalue: 0.2 # 0.55
+    drones_gvalue: 0.3 # 0.55
     drone_names : 
       - "cf_0"
       - "cf_1"
@@ -50,6 +55,7 @@
 
 
 
+    # area esplorare 5*5*2.5 parametrizzabile l'altezza 
 
       # a: 
       #   - 6.55

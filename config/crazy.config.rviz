@@ -9,14 +9,14 @@ Panels:
         - /Drone1_pos1/Topic1
         - /Drone2_dir1/Topic1
         - /Drone3_PointCloud21/Topic1
-        - /TwistStamped1
         - /Pose1
         - /Pose2
-        - /TwistStamped2
+        - /TwistStamped1
         - /Pose3
         - /Pose4
         - /Pose5
         - /Pose5/Topic1
+        - /TwistStamped2
       Splitter Ratio: 0.5088235139846802
     Tree Height: 566
   - Class: rviz_common/Selection
@@ -281,25 +281,6 @@ Visualization Manager:
       Use rainbow: true
       Value: false
     - Alpha: 1
-      Angular Arrow Scale: 2
-      Angular Color: 204; 204; 51
-      Arrow Width: 1
-      Class: rviz_default_plugins/TwistStamped
-      Enabled: true
-      Hide Small Values: true
-      History Length: 1
-      Linear Arrow Scale: 100
-      Linear Color: 204; 51; 51
-      Name: TwistStamped
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /cf_0/cmd_vel
-      Value: true
-    - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.10000000149011612
       Class: rviz_default_plugins/Pose
@@ -345,7 +326,7 @@ Visualization Manager:
       Arrow Width: 0.5
       Class: rviz_default_plugins/TwistStamped
       Enabled: true
-      Hide Small Values: true
+      Hide Small Values: false
       History Length: 1
       Linear Arrow Scale: 100
       Linear Color: 249; 240; 107
@@ -403,7 +384,7 @@ Visualization Manager:
       Axes Radius: 0.10000000149011612
       Class: rviz_default_plugins/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: Pose
@@ -417,6 +398,25 @@ Visualization Manager:
         History Policy: Keep All
         Reliability Policy: Best Effort
         Value: /obstacle/pose
+      Value: false
+    - Alpha: 1
+      Angular Arrow Scale: 2
+      Angular Color: 204; 204; 51
+      Arrow Width: 1
+      Class: rviz_default_plugins/TwistStamped
+      Enabled: true
+      Hide Small Values: false
+      History Length: 1
+      Linear Arrow Scale: 1
+      Linear Color: 204; 51; 51
+      Name: TwistStamped
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /cf_0/cmd_vel
       Value: true
   Enabled: true
   Global Options:
@@ -464,7 +464,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 0.001051009981893003
+      Distance: 0.0010000000474974513
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -479,10 +479,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5894433856010437
+      Pitch: 0.5944433808326721
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.168939590454102
+      Yaw: 3.878937244415283
     Saved: ~
 Window Geometry:
   Displays:

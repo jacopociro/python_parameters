@@ -32,9 +32,14 @@ class CrazyNode(Node):
         self.declare_parameter('control_rate', 10.0)
         self.declare_parameter('max_velocity', 1.0)
         self.declare_parameter('min_velocity', 0.1)
-        self.declare_parameter('max_acceleration', 0.5)
+        self.declare_parameter('max_z', 2.0)
+        self.declare_parameter('linearzbase', 0.01)
         self.declare_parameter('obstacle_topic', '/obstacle/pose')
         self.declare_parameter('drone_names', ['default_drone'])
+        self.declare_parameter('wp_gvalue', 1.0)
+        self.declare_parameter('cs_gvalue', 1.0)
+        self.declare_parameter('obs_gvalue', 1.0)
+        self.declare_parameter('drones_gvalue', 1.0)
         # Waypoints e stazioni di ricarica
         self.declare_parameter('wp.a', [0.0, 0.0, 0.0, 0.0])
         self.declare_parameter('wp.b', [0.0, 0.0, 0.0, 0.0])
@@ -61,9 +66,10 @@ class CrazyNode(Node):
 
 
         self.control_rate = self.get_parameter('control_rate').value
+        self.max_z = self.get_parameter('max_z').value
+        self.linearzbase = self.get_parameter('linearzbase').value
         self.max_velocity = self.get_parameter('max_velocity').value
         self.min_velocity = self.get_parameter('min_velocity').value
-        self.max_acceleration = self.get_parameter('max_acceleration').value
         self.obstacle_topic = self.get_parameter('obstacle_topic').value
         self.drone_names = self.get_parameter('drone_names').value
 
@@ -164,10 +170,10 @@ class CrazyNode(Node):
         self.split = 0.95
         self.Priority = np.zeros(len(self.wp) + 1)
         self.Perc = np.zeros(len(self.wp))
-        self.wp_gvalue = 0.5 # 5.0
-        self.drones_gvalue =  0.3 #0.8
-        self.cs_gvalue = 0.8 #8.0
-        self.obs_gvalue = 0.2 #0.55
+        self.wp_gvalue = self.get_parameter('wp_gvalue').value
+        self.drones_gvalue =  self.get_parameter('drones_gvalue').value
+        self.cs_gvalue = self.get_parameter('cs_gvalue').value
+        self.obs_gvalue = self.get_parameter('obs_gvalue').value
         self.uptake = [False] * len(self.wp)
         self.vec_pos = []
         self.obstacle = []
@@ -178,7 +184,8 @@ class CrazyNode(Node):
             self.vec_pos.append((0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
 
         time.sleep(2.0)
-        self.timer = self.create_timer(0.1, self.timer_callback)
+        # hz 20, 50 parametrizzo
+        self.timer = self.create_timer(1.0/self.control_rate, self.timer_callback)
 
     def timer_callback(self):
         #self.get_logger().info(f"x: {self.x}, x_init: {self.x_init}")
@@ -240,33 +247,28 @@ class CrazyNode(Node):
         self.get_logger().info(f"vettori {vec}")
         sum_vec = np.sum(vec, axis=0)
         sum_vec[3] = 1.0
-        mod = np.linalg.norm(sum_vec)
-        if mod > self.max_velocity:
-            sum_vec = sum_vec / mod * self.max_velocity
 
-        if mod < self.min_velocity:
-            sum_vec = sum_vec /mod *self.min_velocity
         # Logica per il movimento del drone
-        # max speed 0.1 m/s 
+        # speed 0.001 m/s min 0.1 m/s max
         norm = np.linalg.norm(sum_vec)
-        sum_vec = sum_vec/norm
-
-
-        norm = np.linalg.norm(sum_vec)
-        self.get_logger().info(f"Norm of sum_vec: {norm}")
+        
         scale = 1.0
         if norm != 0.0 and norm > self.max_velocity:
             scale = self.max_velocity / norm
-        if norm != 0.0 and norm < self.min_velocity:
-            scale = self.min_velocity / norm
+        
+        sum_vec = sum_vec*scale*self.control_rate
+        norm = np.linalg.norm(sum_vec)
+        self.get_logger().info(f"Norm of sum_vec: {norm}")
 
-        sum_vec = sum_vec*scale
+        if self.z >= self.max_z:
+            sum_vec[2] = 0.0
+            
         cmd_vel_msg = TwistStamped()
         cmd_vel_msg.header.stamp = self.get_clock().now().to_msg()
         cmd_vel_msg.header.frame_id = 'map'
         cmd_vel_msg.twist.linear.x = sum_vec[0]  # Velocità lineare in x
         cmd_vel_msg.twist.linear.y = sum_vec[1]  # Velocità lineare in y
-        cmd_vel_msg.twist.linear.z = sum_vec[2]  # Velocità lineare in z
+        cmd_vel_msg.twist.linear.z = sum_vec[2] + self.linearzbase  # Velocità lineare in z
         cmd_vel_msg.twist.angular.x = 0.0  # Velocità angolare in x
         cmd_vel_msg.twist.angular.y = 0.0  # Velocità angolare in y
         cmd_vel_msg.twist.angular.z = 0.0  # Velocità angolare in z
