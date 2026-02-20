@@ -3,8 +3,8 @@
 /**:
   ros__parameters:
     control_rate: 10.0
-    max_velocity: 1.0
-    min_velocity: 1.0
+    max_velocity: 0.1
+    min_velocity: 0.01
     max_acceleration: 0.5
     obstacle_topic: "/obstacle/pose"
     drone_names : 

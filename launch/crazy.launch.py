@@ -51,6 +51,13 @@ def generate_launch_description():
             output='screen',
             
         ),
+        Node(
+            package='rviz2',
+            executable='rviz2',
+            name='rviz2',
+            arguments=['-d', '/home/gonazza/DroneMission_ws/src/python_parameters/config/crazy.config.rviz'], # Argomento per il file .rviz
+            output='screen')
+
     ])
 
 #   ros__parameters:
