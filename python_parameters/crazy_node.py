@@ -173,6 +173,7 @@ class CrazyNode(Node):
         self.obstacle = []
         self.roll = 0.0
         self.pitch = 0.0
+        self.odom = False
         for name in self.drone_names:
             self.vec_pos.append((0.0, 0.0, 0.0, 0.0, 0.0, 0.0))
 
@@ -295,10 +296,10 @@ class CrazyNode(Node):
         pose_msg.pose.orientation.z = tf.quaternion_from_euler(self.roll, self.pitch, self.yaw)[2]
         pose_msg.pose.orientation.w = tf.quaternion_from_euler(self.roll, self.pitch, self.yaw)[3]
         self.pose_publisher.publish(pose_msg)
-
-        self.x += sum_vec[0]
-        self.y += sum_vec[1]
-        self.z += sum_vec[2]
+        if self.odom == False:
+            self.x += sum_vec[0]
+            self.y += sum_vec[1]
+            self.z += sum_vec[2]
 
         self.Memory += self.Memory_temp
         for i in range(len(self.Memory - 1)):
@@ -348,12 +349,16 @@ class CrazyNode(Node):
             roll, pitch, yaw = tf.euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
 
             self.vec_pos[0] = (x, y, z, roll, pitch, yaw)
-            # self.x = x
-            # self.y = y
-            # self.z = z
-            # self.roll = roll
-            # self.pitch = pitch
-            # self.yaw = yaw
+            if not msg.pose.position:
+                self.odom = False
+            else:
+                self.odom = True
+                self.x = x
+                self.y = y
+                self.z = z
+                self.roll = roll
+                self.pitch = pitch
+                self.yaw = yaw
 
 
 
