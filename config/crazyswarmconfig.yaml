@@ -6,12 +6,13 @@
     max_velocity: 0.1 # m/s
     min_velocity: 0.001
     max_z: 1.5
+    min_z: 0.1
     linearzbase: 0.01 #m/s
     obstacle_topic: "/obstacle/pose"
     wp_gvalue: 0.5 # 5.0
     cs_gvalue: 0.8 # 8.0
     obs_gvalue: 0.2 # 0.55
-    drones_gvalue: 0.3 # 0.55
+    drones_gvalue: 0.45 # 0.55
     drone_names : 
       - "cf_0"
       - "cf_1"

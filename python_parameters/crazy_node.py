@@ -33,6 +33,7 @@ class CrazyNode(Node):
         self.declare_parameter('max_velocity', 1.0)
         self.declare_parameter('min_velocity', 0.1)
         self.declare_parameter('max_z', 2.0)
+        self.declare_parameter('min_z', 0.1)
         self.declare_parameter('linearzbase', 0.01)
         self.declare_parameter('obstacle_topic', '/obstacle/pose')
         self.declare_parameter('drone_names', ['default_drone'])
@@ -67,6 +68,7 @@ class CrazyNode(Node):
 
         self.control_rate = self.get_parameter('control_rate').value
         self.max_z = self.get_parameter('max_z').value
+        self.min_z = self.get_parameter('min_z').value
         self.linearzbase = self.get_parameter('linearzbase').value
         self.max_velocity = self.get_parameter('max_velocity').value
         self.min_velocity = self.get_parameter('min_velocity').value
@@ -130,7 +132,7 @@ class CrazyNode(Node):
                 continue
             else:
                 nombre = name
-
+        self.get_logger().info(f'{nombre}')
         sub_other = self.create_subscription(
             PoseStamped,
             f'{nombre}/odom',
@@ -200,8 +202,6 @@ class CrazyNode(Node):
         self.Perc1 = np.zeros(len(self.sensing))
         waypoint_pos = []
         cs_pos = []
-        drones_pos = []
-        obs_pos = []
         vec = np.zeros((len(self.sensing), 4))
         i = 0
         if self.Priority[len(self.Priority) - 1] < 0.7:
@@ -213,38 +213,35 @@ class CrazyNode(Node):
                 else:
                     self.uptake[i] = False
 
-                self.get_logger().info(f"Waypoint {waypoint} position: {waypoint_pos[i]} - distance: {np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z]))} - waypoint data: {self.wp[waypoint]}")
+                #self.get_logger().info(f"Waypoint {waypoint} position: {waypoint_pos[i]} - distance: {np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z]))} - waypoint data: {self.wp[waypoint]}")
                 self.Perc[i] = self.gaussian(np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z])), self.wp_gvalue, 1.0)
                 self.Priority[i] = self.biological_calculation(i, self.Perc[i], self.uptake[i])
                 for j in range(len(self.sensing)):
                     self.Perc1[j] += self.Priority[i]*self.gaussian(np.linalg.norm(waypoint_pos[i][:3] - np.array([self.sensing[j][:3]])), self.wp_gvalue, 1.0)
-                    
+                    #pass
                 i = i + 1
             
         cs_pos.append(np.array([self.charging_stations[0],self.charging_stations[1], self.charging_stations[2], 1]))
         for j in range(len(self.sensing)):
             self.Perc1[j] += self.Priority[len(self.Priority) - 1]*self.gaussian(np.linalg.norm(cs_pos[0][:3] - np.array([self.sensing[j][:3]])), self.cs_gvalue, 1.0)
             #pass
-        id = 0
-        for name in self.drone_names:
-            if name == self.drone_name:
-                continue
-            else:
-                drones_pos.append(np.array([self.vec_pos[id][0],self.vec_pos[id][1],self.vec_pos[id][2], 1]))
+
+        for i in range(len(self.drone_names)):
                 for j in range(len(self.sensing)):
-                    self.Perc1[j] += self.gaussian(np.linalg.norm(drones_pos[id][:3] - np.array([self.sensing[j][:3]])), self.drones_gvalue, -1.0)
+                    self.Perc1[j] += self.gaussian(np.linalg.norm(self.vec_pos[i][:3] - np.array([self.sensing[j][:3]])), self.drones_gvalue, -1.0)
                     #pass
-            id = id + 1
+                self.get_logger().info(f'self pos: {self.x, self.y, self.z} other drone pos: {self.vec_pos}')
+            
         #self.get_logger().info(f"obstacles list {self.obstacle}")
         for obstacle in self.obstacle:
             #self.get_logger().info(f"Obstacle: {obstacle}")
             for j in range(len(self.sensing)):
                 self.Perc1[j] += self.gaussian(np.linalg.norm(obstacle - np.array([self.sensing[j][:3]])), self.obs_gvalue, -1.0)
-                #pass
+                pass
         for i in range(len(self.sensing)):
-            self.get_logger().info(f"Perc1 for sensing point {i}: {self.Perc1[i]}")
+            #self.get_logger().info(f"Perc1 for sensing point {i}: {self.Perc1[i]}")
             vec[i] = (self.sensing[i] - np.array([self.x, self.y, self.z,1]))*self.Perc1[i]
-        self.get_logger().info(f"vettori {vec}")
+        #self.get_logger().info(f"vettori {vec}")
         sum_vec = np.sum(vec, axis=0)
         sum_vec[3] = 1.0
 
@@ -258,10 +255,12 @@ class CrazyNode(Node):
         
         sum_vec = sum_vec*scale*self.control_rate
         norm = np.linalg.norm(sum_vec)
-        self.get_logger().info(f"Norm of sum_vec: {norm}")
+        #self.get_logger().info(f"Norm of sum_vec: {norm}")
 
         if self.z >= self.max_z:
             sum_vec[2] = 0.0
+        if self.z <= self.min_z and sum_vec[2] < 0.0:
+            sum_vec[2] = 0.0 
             
         cmd_vel_msg = TwistStamped()
         cmd_vel_msg.header.stamp = self.get_clock().now().to_msg()
@@ -314,9 +313,9 @@ class CrazyNode(Node):
             self.get_logger().info(f"Priority[{i}]: {priority_value:.4f}")
 
         # Logger per i valori di Memory
-        self.get_logger().info("=== Memory Values ===")
-        for i, memory_value in enumerate(self.Memory):
-            self.get_logger().info(f"Memory[{i}]: {memory_value:.4f}")
+        # self.get_logger().info("=== Memory Values ===")
+        # for i, memory_value in enumerate(self.Memory):
+        #     self.get_logger().info(f"Memory[{i}]: {memory_value:.4f}")
 
     def handle_service(self, request, response):
         self.Memory[0] += request.memory.mem1
@@ -372,6 +371,7 @@ class CrazyNode(Node):
             roll, pitch, yaw = tf.euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
 
             self.vec_pos[1] = (x, y, z, roll, pitch, yaw)
+            self.get_logger().info(f'{self.vec_pos}')
 
             
             
