@@ -21,18 +21,18 @@ def generate_launch_description():
 
         ),
 
-        Node(
-            package='python_parameters',
-            executable='crazy_node',
-            name='crazy_node',
-            #namespace='cf_1',
-            #output='screen',
-            parameters=['/home/gonazza/DroneMission_ws/src/python_parameters/config/crazyswarmconfig.yaml',
-                        {'drone_name': "cf_1"},
-                        {'drone_id': 1},
-                        {'pos_init': [1.0, 0.0, 0.0]},
-                        {'yaw_init': 0.0}]
-        ),
+        # Node(
+        #     package='python_parameters',
+        #     executable='crazy_node',
+        #     name='crazy_node',
+        #     #namespace='cf_1',
+        #     #output='screen',
+        #     parameters=['/home/gonazza/DroneMission_ws/src/python_parameters/config/crazyswarmconfig.yaml',
+        #                 {'drone_name': "cf_1"},
+        #                 {'drone_id': 1},
+        #                 {'pos_init': [1.0, 0.0, 0.0]},
+        #                 {'yaw_init': 0.0}]
+        # ),
         Node(
             package='python_parameters',
             executable='leader',
@@ -43,14 +43,14 @@ def generate_launch_description():
 
         ),
 
-        Node(
-            package='python_parameters',
-            executable='obstacles',
-            name='obstacles',
-            #namespace='cf_1',
-            output='screen',
+        # Node(
+        #     package='python_parameters',
+        #     executable='obstacles',
+        #     name='obstacles',
+        #     #namespace='cf_1',
+        #     output='screen',
             
-        ),
+        # ),
         Node(
             package='rviz2',
             executable='rviz2',

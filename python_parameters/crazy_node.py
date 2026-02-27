@@ -206,19 +206,21 @@ class CrazyNode(Node):
         i = 0
         if self.Priority[len(self.Priority) - 1] < 0.7:
             for waypoint in self.wp:
-                
-                waypoint_pos.append(np.array([self.wp[waypoint][0], self.wp[waypoint][1], self.wp[waypoint][2], 1]))
-                if np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z])) < 1.0:
-                    self.uptake[i] = True
+                if self.wp[waypoint][0] == 0.0 and self.wp[waypoint][1] == 0.0 and self.wp[waypoint][2] == 0.0:
+                    continue
                 else:
-                    self.uptake[i] = False
+                    waypoint_pos.append(np.array([self.wp[waypoint][0], self.wp[waypoint][1], self.wp[waypoint][2], 1]))
+                    if np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z])) < 1.0:
+                        self.uptake[i] = True
+                    else:
+                        self.uptake[i] = False
 
-                #self.get_logger().info(f"Waypoint {waypoint} position: {waypoint_pos[i]} - distance: {np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z]))} - waypoint data: {self.wp[waypoint]}")
-                self.Perc[i] = self.gaussian(np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z])), self.wp_gvalue, 1.0)
-                self.Priority[i] = self.biological_calculation(i, self.Perc[i], self.uptake[i])
-                for j in range(len(self.sensing)):
-                    self.Perc1[j] += self.Priority[i]*self.gaussian(np.linalg.norm(waypoint_pos[i][:3] - np.array([self.sensing[j][:3]])), self.wp_gvalue, 1.0)
-                    #pass
+                    #self.get_logger().info(f"Waypoint {waypoint} position: {waypoint_pos[i]} - distance: {np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z]))} - waypoint data: {self.wp[waypoint]}")
+                    self.Perc[i] = self.gaussian(np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z])), self.wp_gvalue, 1.0)
+                    self.Priority[i] = self.biological_calculation(i, self.Perc[i], self.uptake[i])
+                    for j in range(len(self.sensing)):
+                        self.Perc1[j] += self.Priority[i]*self.gaussian(np.linalg.norm(waypoint_pos[i][:3] - np.array([self.sensing[j][:3]])), self.wp_gvalue, 1.0)
+                        #pass
                 i = i + 1
             
         cs_pos.append(np.array([self.charging_stations[0],self.charging_stations[1], self.charging_stations[2], 1]))
@@ -243,20 +245,21 @@ class CrazyNode(Node):
             vec[i] = (self.sensing[i] - np.array([self.x, self.y, self.z,1]))*self.Perc1[i]
         #self.get_logger().info(f"vettori {vec}")
         sum_vec = np.sum(vec, axis=0)
-        sum_vec[3] = 1.0
+        sum_vec[3] = 0.0
 
         # Logica per il movimento del drone
         # speed 0.001 m/s min 0.1 m/s max
         norm = np.linalg.norm(sum_vec)
         
         scale = 1.0
+        self.get_logger().info(f"Norm of sum_vec: {norm}")
         if norm != 0.0 and norm > self.max_velocity:
             scale = self.max_velocity / norm
-        
+        elif norm != 0.0 and norm < self.min_velocity:
+            scale = self.min_velocity / norm
         sum_vec = sum_vec*scale*self.control_rate
         norm = np.linalg.norm(sum_vec)
-        #self.get_logger().info(f"Norm of sum_vec: {norm}")
-
+        
         if self.z >= self.max_z:
             sum_vec[2] = 0.0
         if self.z <= self.min_z and sum_vec[2] < 0.0:
