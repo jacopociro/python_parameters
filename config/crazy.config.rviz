@@ -384,7 +384,7 @@ Visualization Manager:
       Axes Radius: 0.10000000149011612
       Class: rviz_default_plugins/Pose
       Color: 255; 25; 0
-      Enabled: false
+      Enabled: true
       Head Length: 0.30000001192092896
       Head Radius: 0.10000000149011612
       Name: Pose
@@ -398,7 +398,7 @@ Visualization Manager:
         History Policy: Keep All
         Reliability Policy: Best Effort
         Value: /obstacle/pose
-      Value: false
+      Value: true
     - Alpha: 1
       Angular Arrow Scale: 2
       Angular Color: 204; 204; 51
@@ -464,25 +464,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 0.0010000000474974513
+      Distance: 0.0018625628435984254
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: -5.768741130828857
-        Y: -5.844533920288086
-        Z: 5.188570499420166
+        X: -5.7683796882629395
+        Y: -5.844645977020264
+        Z: 5.188636779785156
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.5944433808326721
+      Pitch: 0.8894430994987488
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 3.878937244415283
+      Yaw: 4.038938045501709
     Saved: ~
 Window Geometry:
   Displays:
@@ -500,5 +500,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1600
-  X: 1920
-  Y: 0
+  X: 320
+  Y: 27

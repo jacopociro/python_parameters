@@ -43,14 +43,14 @@ def generate_launch_description():
 
         ),
 
-        # Node(
-        #     package='python_parameters',
-        #     executable='obstacles',
-        #     name='obstacles',
-        #     #namespace='cf_1',
-        #     output='screen',
+        Node(
+            package='python_parameters',
+            executable='obstacles',
+            name='obstacles',
+            #namespace='cf_1',
+            output='screen',
             
-        # ),
+        ),
         Node(
             package='rviz2',
             executable='rviz2',

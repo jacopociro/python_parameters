@@ -255,8 +255,8 @@ class CrazyNode(Node):
         self.get_logger().info(f"Norm of sum_vec: {norm}")
         if norm != 0.0 and norm > self.max_velocity:
             scale = self.max_velocity / norm
-        elif norm != 0.0 and norm < self.min_velocity:
-            scale = self.min_velocity / norm
+        # elif norm != 0.0 and norm < self.min_velocity:
+        #     scale = self.min_velocity / norm
         sum_vec = sum_vec*scale*self.control_rate
         norm = np.linalg.norm(sum_vec)
         
