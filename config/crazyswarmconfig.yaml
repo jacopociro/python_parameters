@@ -7,7 +7,7 @@
     min_velocity: 0.01
     max_z: 1.5
     min_z: 0.1
-    linearzbase: 0.01 #m/s
+    linearzbase: 0.0 #m/s
     obstacle_topic: "/obstacle/pose"
     wp_gvalue: 5.0 # 5.0
     cs_gvalue: 0.8 # 8.0
