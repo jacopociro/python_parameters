@@ -244,9 +244,8 @@ class CrazyNode(Node):
             #self.get_logger().info(f"Perc1 for sensing point {i}: {self.Perc1[i]}")
             vec[i] = (self.sensing[i] - np.array([self.x, self.y, self.z,1]))*self.Perc1[i]
         #self.get_logger().info(f"vettori {vec}")
-        sum_vec = np.sum(vec, axis=0)
+        sum_vec = np.sum(vec, axis=0)*self.control_rate
         sum_vec[3] = 0.0
-
         # Logica per il movimento del drone
         # speed 0.001 m/s min 0.1 m/s max
         norm = np.linalg.norm(sum_vec)
@@ -257,8 +256,10 @@ class CrazyNode(Node):
             scale = self.max_velocity / norm
         # elif norm != 0.0 and norm < self.min_velocity:
         #     scale = self.min_velocity / norm
-        sum_vec = sum_vec*scale*self.control_rate
+        sum_vec = sum_vec*scale
         norm = np.linalg.norm(sum_vec)
+        self.get_logger().info(f"{scale} scale")
+        self.get_logger().info(f"Norm of {sum_vec} = {norm}")
         
         if self.z >= self.max_z:
             sum_vec[2] = 0.0
@@ -374,7 +375,7 @@ class CrazyNode(Node):
             roll, pitch, yaw = tf.euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
 
             self.vec_pos[1] = (x, y, z, roll, pitch, yaw)
-            self.get_logger().info(f'{self.vec_pos}')
+            # self.get_logger().info(f'{self.vec_pos}')
 
             
             
