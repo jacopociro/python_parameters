@@ -18,6 +18,7 @@ def generate_launch_description():
             #namespace='cf_0',
             #output='screen',
             parameters=[yaml_config,
+                        #'/root/ros2_ws/src/python_parameters/config/crazyswarmconfig.yaml'
                         {'drone_name': "cf_0"},
                         {'drone_id': 0},
                         {'pos_init': [0.0, 0.0, 0.0]},
@@ -32,29 +33,31 @@ def generate_launch_description():
         #     #namespace='cf_1',
         #     #output='screen',
         #     parameters=[yaml_config,
+        #                 #'/root/ros2_ws/src/python_parameters/config/crazyswarmconfig.yaml'
         #                 {'drone_name': "cf_1"},
         #                 {'drone_id': 1},
         #                 {'pos_init': [1.0, 0.0, 0.0]},
         #                 {'yaw_init': 0.0}]
         # ),
+
         Node(
             package='python_parameters',
             executable='leader',
             name='leader',
             #namespace='cf_1',
             output='screen',
-            parameters=['/home/gonazza/DroneMission_ws/src/python_parameters/config/crazyswarmconfig.yaml'],
-
+            parameters=[yaml_config],
+            # '/root/ros2_ws/src/python_parameters/config/crazyswarmconfig.yaml'
         ),
 
-        Node(
-            package='python_parameters',
-            executable='obstacles',
-            name='obstacles',
-            #namespace='cf_1',
-            output='screen',
+        # Node(
+        #     package='python_parameters',
+        #     executable='obstacles',
+        #     name='obstacles',
+        #     #namespace='cf_1',
+        #     output='screen',
             
-        ),
+        # ),
         Node(
             package='rviz2',
             executable='rviz2',

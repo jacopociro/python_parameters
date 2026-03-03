@@ -13,7 +13,7 @@ class ObstaclePublisher(Node):
     def generate_positions(self):
         obstacles = []
         obstacle_positions = [
-            (3.0, 0.0, 0.0),
+            (0.0, 2.0, 0.52),
             # (1.0, 1.0, 0.0),
             # (2.0, -1.0, 0.0),
             # (-1.0, -0.5, 0.0)
@@ -21,7 +21,7 @@ class ObstaclePublisher(Node):
         for i in range(len(obstacle_positions)):
             pose = PoseStamped()
             pose.header.stamp = self.get_clock().now().to_msg()
-            pose.header.frame_id = 'map'
+            pose.header.frame_id = 'world' 
             pose.pose.position.x = obstacle_positions[i][0]
             pose.pose.position.y = obstacle_positions[i][1]
             pose.pose.position.z = obstacle_positions[i][2]

@@ -132,13 +132,13 @@ class CrazyNode(Node):
                 continue
             else:
                 nombre = name
-        self.get_logger().info(f'{nombre}')
-        sub_other = self.create_subscription(
-            PoseStamped,
-            f'{nombre}/odom',
-            self.pose_callback_1,
-            10,
-        )
+                self.get_logger().info(f'{nombre}')
+                sub_other = self.create_subscription(
+                    PoseStamped,
+                    f'{nombre}/odom',
+                    self.pose_callback_1,
+                    10,
+                )
         # for name in self.drone_names:
         #     sub = self.create_subscription(
         #         PoseStamped,
@@ -268,7 +268,7 @@ class CrazyNode(Node):
             
         cmd_vel_msg = TwistStamped()
         cmd_vel_msg.header.stamp = self.get_clock().now().to_msg()
-        cmd_vel_msg.header.frame_id = 'map'
+        cmd_vel_msg.header.frame_id = 'world'
         cmd_vel_msg.twist.linear.x = sum_vec[0]  # Velocità lineare in x
         cmd_vel_msg.twist.linear.y = sum_vec[1]  # Velocità lineare in y
         cmd_vel_msg.twist.linear.z = sum_vec[2] + self.linearzbase  # Velocità lineare in z
@@ -280,7 +280,7 @@ class CrazyNode(Node):
 
         pose_msg = PoseStamped()
         pose_msg.header.stamp = self.get_clock().now().to_msg()
-        pose_msg.header.frame_id = 'map'
+        pose_msg.header.frame_id = 'world'
         pose_msg.pose.position.x = sum_vec[0] + self.x
         pose_msg.pose.position.y = sum_vec[1] + self.y
         pose_msg.pose.position.z = sum_vec[2] + self.z
@@ -292,7 +292,7 @@ class CrazyNode(Node):
 
         pose_msg = PoseStamped()
         pose_msg.header.stamp = self.get_clock().now().to_msg()
-        pose_msg.header.frame_id = 'map'
+        pose_msg.header.frame_id = 'world'
         pose_msg.pose.position.x = self.x
         pose_msg.pose.position.y = self.y
         pose_msg.pose.position.z = self.z
@@ -306,7 +306,7 @@ class CrazyNode(Node):
             self.y += sum_vec[1]
             self.z += sum_vec[2]
 
-        self.Memory += self.Memory_temp
+        #self.Memory += self.Memory_temp
         for i in range(len(self.Memory - 1)):
             if self.Memory[i] > 0.0005253:
                 self.Memory[i] = 0.0005253
