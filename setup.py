@@ -28,8 +28,9 @@ setup(
         'console_scripts': [
             'crazy_node = python_parameters.crazy_node:main',
             'leader = python_parameters.leader:main',
-            'obstacles = python_parameters.obstacles:main'
-            
+            'obstacles = python_parameters.obstacles:main',
+            'fig = python_parameters.fig:main',
+            'crazy_nodebat = python_parameters.crazy_nodebat:main'
         ],
     },
 )

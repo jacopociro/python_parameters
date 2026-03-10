@@ -23,22 +23,35 @@ def generate_launch_description():
                         {'drone_id': 0},
                         {'pos_init': [0.0, 0.0, 0.0]},
                         {'yaw_init': 0.0}]
-
         ),
 
-        # Node(
-        #     package='python_parameters',
-        #     executable='crazy_node',
-        #     name='crazy_node',
-        #     #namespace='cf_1',
-        #     #output='screen',
-        #     parameters=[yaml_config,
-        #                 #'/root/ros2_ws/src/python_parameters/config/crazyswarmconfig.yaml'
-        #                 {'drone_name': "cf_1"},
-        #                 {'drone_id': 1},
-        #                 {'pos_init': [1.0, 0.0, 0.0]},
-        #                 {'yaw_init': 0.0}]
-        # ),
+        Node(
+            package='python_parameters',
+            executable='crazy_node',
+            name='crazy_node',
+            #namespace='cf_1',
+            #output='screen',
+            parameters=[yaml_config,
+                        #'/root/ros2_ws/src/python_parameters/config/crazyswarmconfig.yaml'
+                        {'drone_name': "cf_1"},
+                        {'drone_id': 1},
+                        {'pos_init': [1.5, 0.0, 0.0]},
+                        {'yaw_init': 0.0}]
+        ),
+
+        Node(
+            package='python_parameters',
+            executable='crazy_node',
+            name='crazy_node',
+            #namespace='cf_1',
+            #output='screen',
+            parameters=[yaml_config,
+                        #'/root/ros2_ws/src/python_parameters/config/crazyswarmconfig.yaml'
+                        {'drone_name': "cf_2"},
+                        {'drone_id': 2},
+                        {'pos_init': [-1.5, 0.0, 0.0]},
+                        {'yaw_init': 0.0}]
+        ),
 
         Node(
             package='python_parameters',
@@ -49,15 +62,23 @@ def generate_launch_description():
             parameters=[yaml_config],
             # '/root/ros2_ws/src/python_parameters/config/crazyswarmconfig.yaml'
         ),
-
-        # Node(
-        #     package='python_parameters',
-        #     executable='obstacles',
-        #     name='obstacles',
-        #     #namespace='cf_1',
-        #     output='screen',
+        Node(
+            package='python_parameters',
+            executable='fig',
+            name='fig',
+            #namespace='cf_1',
+            output='screen',
+            parameters=[yaml_config]
             
-        # ),
+        ),
+        Node(
+            package='python_parameters',
+            executable='obstacles',
+            name='obstacles',
+            #namespace='cf_1',
+            output='screen',
+            
+        ),
         Node(
             package='rviz2',
             executable='rviz2',

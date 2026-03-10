@@ -13,10 +13,17 @@ class ObstaclePublisher(Node):
     def generate_positions(self):
         obstacles = []
         obstacle_positions = [
-            (0.0, 2.0, 0.52),
-            # (1.0, 1.0, 0.0),
-            # (2.0, -1.0, 0.0),
-            # (-1.0, -0.5, 0.0)
+	        (-2.0, 2.0, 0.5),
+            (1.5, 2.0, 0.5),
+            # (1.0, -1.0, 0.1),
+            # (-3.0, 0.0, 0.1),
+            # (1.0, 4.0, 0.1),
+            # (-1.0, 2.0, 0.1),
+            # (1.5, 3.0, 0.1),
+            # (0.0, -2.0, 0.1),
+            # (1.5, 3.0, 0.1),
+            # (-1.5, -1.5, 0.1),
+            
         ]
         for i in range(len(obstacle_positions)):
             pose = PoseStamped()

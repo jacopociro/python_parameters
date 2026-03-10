@@ -8,6 +8,7 @@ import math
 import tf_transformations as tf
 import numpy as np
 import time 
+import math
 from crazy_interfaces.msg import Resourcemsg
 from crazy_interfaces.srv import Resource
 from crazyflie_interfaces.msg import Status
@@ -76,7 +77,7 @@ class CrazyNode(Node):
         self.obstacle_topic = self.get_parameter('obstacle_topic').value
         self.drone_names = self.get_parameter('drone_names').value
         self.Ncell = self.get_parameter('Ncell').value
-        
+
         self.wp['a'] = self.get_parameter('wp.a').value
         self.wp['b'] = self.get_parameter('wp.b').value
         self.wp['c'] = self.get_parameter('wp.c').value
@@ -102,7 +103,7 @@ class CrazyNode(Node):
 
         self.t_start = self.get_clock().now()
         self.t_last = self.get_clock().now()
-
+        
         # Stampa per debug
         self.get_logger().info("=== Parameters ===")
 
@@ -147,35 +148,35 @@ class CrazyNode(Node):
             self.pose_callback,
             10,
         )
-        # for name in self.drone_names:
-        #     if self.drone_name == name:
-        #         continue
-        #     else:
-        #         nombre = name
-        #         self.get_logger().info(f'{nombre}')
-        #         sub_other = self.create_subscription(
-        #             PoseStamped,
-        #             f'{nombre}/odom',
-        #             self.pose_callback_1,
-        #             10,
-        #         )
         for name in self.drone_names:
-            
-            self.get_logger().info(f'ID: {id}')
-            self.get_logger().info(f'NAME {name}')
-            sub_other = self.create_subscription(
-                PoseStamped,
-                f'{name}/odom',
-                lambda msg, id = int(name.split('_')[1]): self.pose_callback_1(msg, id),
-                10,
-            )
-            
+            if self.drone_name == name:
+                continue
+            else:
+                nombre = name
+                self.get_logger().info(f'{nombre}')
+                sub_other = self.create_subscription(
+                    PoseStamped,
+                    f'{nombre}/odom',
+                    self.pose_callback_1,
+                    10,
+                )
         sub_bat = self.create_subscription(
             Status, 
             f'{self.drone_name}/status',
             self.status_callback,
             10
         )
+        # for name in self.drone_names:
+        #     sub = self.create_subscription(
+        #         PoseStamped,
+        #         f'{name}/pose',
+        #         lambda msg: self.pose_callback_1(msg, name),
+        #         10,
+        #     )
+        #     self.name = name
+        #     sub_pose_list.append(sub)
+            
+            
         # Subscriber 2 su /pose
         self.pose_subscriber_obs = self.create_subscription(
             PoseStamped,
@@ -247,9 +248,12 @@ class CrazyNode(Node):
                     self.Perc[i] = self.gaussian(np.linalg.norm(waypoint_pos[i][:3] - np.array([self.x, self.y, self.z])), self.wp_gvalue, 1.0)
                     self.Priority[i] = self.biological_calculation(i, self.Perc[i], self.uptake[i])
                     for j in range(len(self.sensing)):
-                        self.Perc1[j] += self.Priority[i]*self.gaussian(np.linalg.norm(waypoint_pos[i][:3] - np.array([self.sensing[j][:3]])), self.wp_gvalue, 1.0)
-                        #pass
+                        #self.Perc1[j] += self.Priority[i]*self.gaussian(np.linalg.norm(waypoint_pos[i][:3] - np.array([self.sensing[j][:3]])), self.wp_gvalue, 1.0)
+                        pass
                 i = i + 1
+        else:
+            for i in range(len(self.wp)):
+                self.Priority[i] = 0.0
         cs_pos.append(np.array([self.charging_stations[0],self.charging_stations[1], self.charging_stations[2], 1]))
         for j in range(len(self.sensing)):
             self.Perc1[j] += self.Priority[len(self.Priority) - 1]*self.gaussian(np.linalg.norm(cs_pos[0][:3] - np.array([self.sensing[j][:3]])), self.cs_gvalue, 1.0)
@@ -257,10 +261,9 @@ class CrazyNode(Node):
 
         for i in range(len(self.drone_names)):
                 for j in range(len(self.sensing)):
-                    if self.vec_pos[i][0] != self.x and self.vec_pos[i][1] != self.y and self.vec_pos[i][2] != self.z:
-                        self.Perc1[j] += self.gaussian(np.linalg.norm(self.vec_pos[i][:3] - np.array([self.sensing[j][:3]])), self.drones_gvalue, -1.0)
+                    self.Perc1[j] += self.gaussian(np.linalg.norm(self.vec_pos[i][:3] - np.array([self.sensing[j][:3]])), self.drones_gvalue, -1.0)
                     #pass
-                self.get_logger().info(f'self pos: {self.x, self.y, self.z} other drone pos: {self.vec_pos}')
+                #self.get_logger().info(f'self pos: {self.x, self.y, self.z} other drone pos: {self.vec_pos}')
             
         #self.get_logger().info(f"obstacles list {self.obstacle}")
         for obstacle in self.obstacle:
@@ -279,15 +282,15 @@ class CrazyNode(Node):
         norm = np.linalg.norm(sum_vec)
         
         scale = 1.0
-        self.get_logger().info(f"Norm of sum_vec: {norm}")
+        #self.get_logger().info(f"Norm of sum_vec: {norm}")
         if norm != 0.0 and norm > self.max_velocity:
             scale = self.max_velocity / norm
         # elif norm != 0.0 and norm < self.min_velocity:
         #     scale = self.min_velocity / norm
         sum_vec = sum_vec*scale
         norm = np.linalg.norm(sum_vec)
-        self.get_logger().info(f"{scale} scale")
-        self.get_logger().info(f"Norm of {sum_vec} = {norm}")
+        # self.get_logger().info(f"{scale} scale")
+        # self.get_logger().info(f"Norm of {sum_vec} = {norm}")
         
         if self.z >= self.max_z:
             sum_vec[2] = 0.0
@@ -381,7 +384,7 @@ class CrazyNode(Node):
             z = msg.pose.position.z
             roll, pitch, yaw = tf.euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
 
-            #self.vec_pos[0] = (x, y, z, roll, pitch, yaw)
+            self.vec_pos[0] = (x, y, z, roll, pitch, yaw)
             if not msg.pose.position:
                 self.odom = False
             else:
@@ -395,39 +398,38 @@ class CrazyNode(Node):
 
 
 
-    def pose_callback_1(self, msg, id):
+    def pose_callback_1(self, msg):
             
             x = msg.pose.position.x
             y = msg.pose.position.y
             z = msg.pose.position.z
             roll, pitch, yaw = tf.euler_from_quaternion([msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w])
-            
-            
-            
-            self.vec_pos[id] = (x, y, z, roll, pitch, yaw)
-            
+
+            self.vec_pos[1] = (x, y, z, roll, pitch, yaw)
             # self.get_logger().info(f'{self.vec_pos}')
 
     def status_callback(self, msg):
-    
+        
         self.vbat = msg.battery_voltage       
         # pwm
         # self.Pmot = self.cd *( speed1^(3) + speed2^3 + speed3^3 + speed4^3) / self.etam
-        # self.vbat = self.battery_model()       
-                
+        # self.vbat = self.battery_model()
                 
                 
 
 
     def pose_callback_2(self, msg):
         
-        if np.any(np.all(self.obstacle == np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]))):
-            pass
-        else:
-            self.obstacle.append([msg.pose.position.x , msg.pose.position.y, msg.pose.position.z])
+        # if np.any(np.all(self.obstacle == np.array([msg.pose.position.x, msg.pose.position.y, msg.pose.position.z]))):
+        #     pass
+        # else:
+        self.obstacle.append([msg.pose.position.x , msg.pose.position.y, msg.pose.position.z])
 
 
     # UTILS
+
+
+
     def battery_model(self):
 
         # -----------------------------
@@ -520,7 +522,7 @@ class CrazyNode(Node):
         vbat = 0.5 * ((U0 - self.Ucap) + math.sqrt(discr))
 
         return vbat
-    
+
     def sphere(self):
         # Angoli
         polar_angle = [
