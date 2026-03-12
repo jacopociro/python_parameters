@@ -10,7 +10,8 @@ import numpy as np
 import time 
 from crazy_interfaces.msg import Resourcemsg
 from crazy_interfaces.srv import Resource
-from crazyflie_interfaces.msg import Status
+from crazyflie_interfaces.msg import LogDataGeneric
+from std_msgs.msg import Float32
 
 class CrazyNode(Node):
     def __init__(self):
@@ -95,7 +96,7 @@ class CrazyNode(Node):
         self.E_cell = 0.0
     
         self.etam = 0.75
-        self.cd = 2*10^(-6)
+        self.cd = 2*10**(-6)
         self.dUcap = 0.0
         self.Ucap = 0.0
         self.P_cell_tot = 0.0
@@ -139,6 +140,8 @@ class CrazyNode(Node):
         self.goal_publisher = self.create_publisher(PoseStamped, f'{self.drone_name}/goal', 10)
         # Publisher su /odom
         self.pose_publisher = self.create_publisher(PoseStamped, f'{self.drone_name}/odom', 10)
+                # Publisher battery voltage
+        self.bat_publisher = self.create_publisher(Float32,f'{self.drone_name}/bat',10)
         sub_pose_list = []
         # Subscriber 1 su /pose
         sub_self = self.create_subscription(
@@ -171,8 +174,8 @@ class CrazyNode(Node):
             )
             
         sub_bat = self.create_subscription(
-            Status, 
-            f'{self.drone_name}/status',
+            LogDataGeneric, 
+            f'{self.drone_name}/drone_status',
             self.status_callback,
             10
         )
@@ -409,11 +412,20 @@ class CrazyNode(Node):
             # self.get_logger().info(f'{self.vec_pos}')
 
     def status_callback(self, msg):
-    
-        self.vbat = msg.battery_voltage       
+        
+        #self.vbat = msg.values[4]
+        speed1 =  msg.values[0]*math.pi/180      
+        speed2 =  msg.values[1]*math.pi/180  
+        speed3 =  msg.values[2]*math.pi/180  
+        speed4 =  msg.values[3]*math.pi/180  
         # pwm
-        # self.Pmot = self.cd *( speed1^(3) + speed2^3 + speed3^3 + speed4^3) / self.etam
-        # self.vbat = self.battery_model()       
+        self.Pmot = self.cd *( speed1**(3) + speed2**3 + speed3**3 + speed4**3) / self.etam
+        #self.get_logger().info(f'Pmot: {self.Pmot}')
+        self.vbat = self.battery_model() 
+        # Publish battery voltage
+        bat_msg = Float32()
+        bat_msg.data = float(self.vbat)
+        self.bat_publisher.publish(bat_msg)      
                 
                 
                 
@@ -436,17 +448,17 @@ class CrazyNode(Node):
         a0 = 4.2
         a1 = -0.1102178
         a2 = 0.0103368
-        a3 = -4.3778e-4
-        Rmin = 4.5e-3
+        a3 = -4.3778*10**(-4)
+        Rmin = 4.5*10**(-3)
 
         b0 = 0.0015778
-        b1 = -7.7608e-5
+        b1 = -7.7608*10**(-5)
         b2 = 0.0069498
 
         d0 = 0.9876
         d1 = -0.0020
-        d2 = -5.2484e-5
-        d3 = 1.2230e-7
+        d2 = -5.2484*10**(-5)
+        d3 = 1.2230*10**(-7)
 
         tRC = 3.3
 
@@ -467,8 +479,8 @@ class CrazyNode(Node):
         t = now - self.t_start
 
         # Convert to seconds
-        dt_raw = max(0.0, dt.nanoseconds / 1e9)
-        t_s = max(1e-9, t.nanoseconds / 1e9)
+        dt_raw = max(0.0, dt.nanoseconds / 1*10**(9))
+        t_s = max(1e-9, t.nanoseconds / 1*10**(9))
 
         # -----------------------------
         # Check for abnormal dt
@@ -490,35 +502,38 @@ class CrazyNode(Node):
         Ncell = self.Ncell[0] * self.Ncell[1]
 
         # Power per cell
-        P_cell = self.Pmot / (Ncell * self.Ccell) / 3600.0
-
+        P_cell = self.Pmot / ((Ncell * self.Ccell)*3600)
+ 
         # Empirical coefficients
         k = d0 + d1 * P_cell + d2 * P_cell**2 + d3 * P_cell**3
-
+ 
         # Update stored energy
         self.E_cell += P_cell * dt_s
+       
         self.P_cell_tot += P_cell
-
+        
         # Average power
         P_cell_avg = self.E_cell / t_s
         if P_cell_avg < 0.0:
             P_cell_avg = 0.0
-
+        
         # Open circuit voltage and resistance
         U0 = a0 + a1 * self.E_cell + a2 * self.E_cell**2 + a3 * self.E_cell**3
+        
         R0 = max(b0 + b1 * P_cell_avg + b2 * self.Ccell, Rmin)
-
+        
         # Capacitor dynamics
         dUcap = (k * P_cell - self.Ucap) / tRC
+        
         self.Ucap += dUcap * dt_s
-
+        
         # Battery voltage
         discr = (U0 - self.Ucap)**2 - 4.0 * R0 * P_cell
         if discr < 0.0:
             discr = 0.0
-
+        
         vbat = 0.5 * ((U0 - self.Ucap) + math.sqrt(discr))
-
+        
         return vbat
     
     def sphere(self):

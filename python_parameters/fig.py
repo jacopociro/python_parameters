@@ -3,7 +3,8 @@
 import rclpy
 from rclpy.node import Node
 from geometry_msgs.msg import PoseStamped
-from crazyflie_interfaces.msg import Status  # sostituisci con il tipo corretto del tuo Status
+from crazyflie_interfaces.msg import LogDataGeneric
+from std_msgs.msg import Float32
 
 import matplotlib.pyplot as plt
 import csv
@@ -48,13 +49,17 @@ class MultiDronePlotter(Node):
         # -----------------------------
 
         self.positions = {}
-        self.battery = {}
+        self.battery_status = {}
+        self.battery_model = {}
+
         self.subscribers = {}
         self.sub_status = {}
+        self.sub_battery = {}
 
         for name in self.drone_names:
             self.positions[name] = {"x": [], "y": [], "z": []}
-            self.battery[name] = []
+            self.battery_status[name] = []
+            self.battery_model[name] = []
 
         # -----------------------------
         # DRONE POSE SUBSCRIBERS
@@ -70,15 +75,28 @@ class MultiDronePlotter(Node):
             )
 
         # -----------------------------
-        # DRONE STATUS SUBSCRIBERS (BATTERY)
+        # DRONE STATUS SUBSCRIBERS
         # -----------------------------
 
         for name in self.drone_names:
-            topic = f"/{name}/status"
+            topic = f"/{name}/drone_status"
             self.sub_status[name] = self.create_subscription(
-                Status,
+                LogDataGeneric,
                 topic,
                 self.create_status_callback(name),
+                10
+            )
+
+        # -----------------------------
+        # DRONE BATTERY MODEL SUBSCRIBERS
+        # -----------------------------
+
+        for name in self.drone_names:
+            topic = f"/{name}/bat"
+            self.sub_battery[name] = self.create_subscription(
+                Float32,
+                topic,
+                self.create_battery_callback(name),
                 10
             )
 
@@ -106,7 +124,7 @@ class MultiDronePlotter(Node):
         )
 
         # -----------------------------
-        # CSV LOGGING
+        # CSV LOGGING POSITIONS
         # -----------------------------
 
         self.csv_file = open("drones_positions.csv", "w", newline="")
@@ -117,12 +135,16 @@ class MultiDronePlotter(Node):
             header += [f"{name}_x", f"{name}_y", f"{name}_z"]
         self.csv_writer.writerow(header)
 
-        # CSV per battery
+        # -----------------------------
+        # CSV LOGGING BATTERY
+        # -----------------------------
+
         self.csv_bat_file = open("drones_battery.csv", "w", newline="")
         self.csv_bat_writer = csv.writer(self.csv_bat_file)
+
         header_bat = ["time"]
         for name in self.drone_names:
-            header_bat.append(f"{name}_battery")
+            header_bat += [f"{name}_status", f"{name}_model"]
         self.csv_bat_writer.writerow(header_bat)
 
         # -----------------------------
@@ -163,13 +185,22 @@ class MultiDronePlotter(Node):
         return callback
 
     # ---------------------------------
-    # CALLBACK FACTORY STATUS
+    # CALLBACK STATUS
     # ---------------------------------
 
     def create_status_callback(self, drone_name):
         def callback(msg):
-            # assumiamo msg.battery contiene lo stato della batteria in percentuale
-            self.battery[drone_name].append(msg.battery)
+            self.battery_status[drone_name].append(msg.values[4])
+            self.write_battery_csv()
+        return callback
+
+    # ---------------------------------
+    # CALLBACK BATTERY MODEL
+    # ---------------------------------
+
+    def create_battery_callback(self, drone_name):
+        def callback(msg):
+            self.battery_model[drone_name].append(msg.data)
             self.write_battery_csv()
         return callback
 
@@ -186,7 +217,7 @@ class MultiDronePlotter(Node):
             self.obstacles.append(obstacle)
 
     # ---------------------------------
-    # CSV LOGGING POSIZIONI
+    # CSV LOGGING POSITIONS
     # ---------------------------------
 
     def write_csv(self):
@@ -202,17 +233,25 @@ class MultiDronePlotter(Node):
         self.csv_writer.writerow(row)
 
     # ---------------------------------
-    # CSV LOGGING BATTERIA
+    # CSV LOGGING BATTERY
     # ---------------------------------
 
     def write_battery_csv(self):
         t = self.get_clock().now().nanoseconds * 1e-9
         row = [t]
+
         for name in self.drone_names:
-            if len(self.battery[name]) > 0:
-                row.append(self.battery[name][-1])
+
+            if len(self.battery_status[name]) > 0:
+                row.append(self.battery_status[name][-1])
             else:
                 row.append(None)
+
+            if len(self.battery_model[name]) > 0:
+                row.append(self.battery_model[name][-1])
+            else:
+                row.append(None)
+
         self.csv_bat_writer.writerow(row)
 
     # ---------------------------------
@@ -220,71 +259,86 @@ class MultiDronePlotter(Node):
     # ---------------------------------
 
     def update_plot(self):
-        # ---- posizione droni ----
+
         self.ax3d.cla()
         self.ax2d.cla()
+
         for name in self.drone_names:
             x = self.positions[name]["x"]
             y = self.positions[name]["y"]
             z = self.positions[name]["z"]
+
             if len(x) == 0:
                 continue
+
             self.ax3d.plot(x, y, z, label=name)
             self.ax2d.plot(x, y, label=name)
 
-        # ---- waypoints ----
         if self.waypoints:
             wx = [w[0] for w in self.waypoints]
             wy = [w[1] for w in self.waypoints]
             wz = [w[2] for w in self.waypoints]
+
             self.ax3d.scatter(wx, wy, wz, marker='o', label="waypoints")
             self.ax2d.scatter(wx, wy, marker='o')
 
-        # ---- ostacoli ----
         if self.obstacles:
             ox = [o[0] for o in self.obstacles]
             oy = [o[1] for o in self.obstacles]
             oz = [o[2] for o in self.obstacles]
+
             self.ax3d.scatter(ox, oy, oz, marker='x', label="obstacles")
             self.ax2d.scatter(ox, oy, marker='x')
 
-        # ---- assi ----
         self.ax3d.set_xlabel("X")
         self.ax3d.set_ylabel("Y")
         self.ax3d.set_zlabel("Z")
+
         self.ax2d.set_xlabel("X")
         self.ax2d.set_ylabel("Y")
 
-        handles, labels = self.ax3d.get_legend_handles_labels()
-        if handles:
+        if self.ax3d.get_legend_handles_labels()[0]:
             self.ax3d.legend()
-        handles, labels = self.ax2d.get_legend_handles_labels()
-        if handles:
+
+        if self.ax2d.get_legend_handles_labels()[0]:
             self.ax2d.legend()
 
-        # ---- plot battery ----
+        # ---- BATTERY PLOT ----
+
         self.ax_bat.cla()
+
         for name in self.drone_names:
-            y = self.battery[name]
-            x = list(range(len(y)))  # tempo discreto in frame
-            if len(y) > 0:
-                self.ax_bat.plot(x, y, label=name)
+
+            y_status = self.battery_status[name]
+            y_model = self.battery_model[name]
+
+            if len(y_status) > 0:
+                x = list(range(len(y_status)))
+                self.ax_bat.plot(x, y_status, linestyle="--", label=f"{name}_status")
+
+            if len(y_model) > 0:
+                x = list(range(len(y_model)))
+                self.ax_bat.plot(x, y_model, label=f"{name}_model")
+
         self.ax_bat.set_xlabel("Frame")
-        self.ax_bat.set_ylabel("Battery %")
-        handles, labels = self.ax_bat.get_legend_handles_labels()
-        if handles:
+        self.ax_bat.set_ylabel("Battery")
+        if self.ax_bat.get_legend_handles_labels()[0]:
             self.ax_bat.legend()
 
         plt.pause(0.1/self.control_rate)
 
 
 def main(args=None):
+
     rclpy.init(args=args)
+
     node = MultiDronePlotter()
+
     try:
         rclpy.spin(node)
     except KeyboardInterrupt:
         pass
+
     node.csv_file.close()
     node.csv_bat_file.close()
     node.destroy_node()

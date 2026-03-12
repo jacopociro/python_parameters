@@ -39,19 +39,19 @@ def generate_launch_description():
                         {'yaw_init': 0.0}]
         ),
 
-        Node(
-            package='python_parameters',
-            executable='crazy_node',
-            name='crazy_node',
-            #namespace='cf_1',
-            #output='screen',
-            parameters=[yaml_config,
-                        #'/root/ros2_ws/src/python_parameters/config/crazyswarmconfig.yaml'
-                        {'drone_name': "cf_2"},
-                        {'drone_id': 2},
-                        {'pos_init': [-1.5, 0.0, 0.0]},
-                        {'yaw_init': 0.0}]
-        ),
+        # Node(
+        #     package='python_parameters',
+        #     executable='crazy_node',
+        #     name='crazy_node',
+        #     #namespace='cf_1',
+        #     #output='screen',
+        #     parameters=[yaml_config,
+        #                 #'/root/ros2_ws/src/python_parameters/config/crazyswarmconfig.yaml'
+        #                 {'drone_name': "cf_2"},
+        #                 {'drone_id': 2},
+        #                 {'pos_init': [-1.5, 0.0, 0.0]},
+        #                 {'yaw_init': 0.0}]
+        # ),
 
         Node(
             package='python_parameters',
